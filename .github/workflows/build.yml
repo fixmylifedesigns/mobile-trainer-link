@@ -60,6 +60,8 @@ jobs:
       - name: Build
         run: |
           export PICO_SDK_PATH="$HOME/pico-sdk"
+          # SDK 1.5.1's pioasm/elf2uf2 sub-builds predate CMake 4; the env var reaches them too
+          export CMAKE_POLICY_VERSION_MINIMUM=3.5
           cmake -S fw -B fw/build -DPICO_SDK_PATH="$PICO_SDK_PATH" -DPICO_BOARD=pico -DCMAKE_BUILD_TYPE=Release
           cmake --build fw/build -j4
           cp fw/build/pico_gb_mobile_adapter.uf2 MobileTrainerLink-Pico.uf2
