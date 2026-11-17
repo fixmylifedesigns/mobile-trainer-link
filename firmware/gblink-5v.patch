@@ -1,0 +1,37 @@
+diff --git a/src/specific/main.c b/src/specific/main.c
+index 728de88..0f06fcc 100644
+--- a/src/specific/main.c
++++ b/src/specific/main.c
+@@ -9,6 +9,24 @@
+ #include "useful_qualifiers.h"
+ #include "sync.h"
+ #include "linkcable.h"
++#include "hardware/gpio.h"
++#include "hardware/timer.h"
++
++// GB-Link boards pick the link-port voltage with GP11 (3.3 V) / GP12 (5 V), active low.
++// Game Boy / Game Boy Color need 5 V. Same sequence as GB-Link's firmware: both high
++// (off) first, then pull the 5 V line low. Boards without the switch leave these unused.
++#define GBLINK_VSWITCH_3V3_PIN 11
++#define GBLINK_VSWITCH_5V_PIN  12
++static void gblink_select_5v(void) {
++    gpio_init(GBLINK_VSWITCH_3V3_PIN);
++    gpio_init(GBLINK_VSWITCH_5V_PIN);
++    gpio_put(GBLINK_VSWITCH_3V3_PIN, 1);
++    gpio_put(GBLINK_VSWITCH_5V_PIN, 1);
++    gpio_set_dir(GBLINK_VSWITCH_3V3_PIN, GPIO_OUT);
++    gpio_set_dir(GBLINK_VSWITCH_5V_PIN, GPIO_OUT);
++    busy_wait_us(100);
++    gpio_put(GBLINK_VSWITCH_5V_PIN, 0);
++}
+ 
+ //--------------------------------------------------------------------+
+ // MACRO CONSTANT TYPEDEF
+@@ -77,6 +95,7 @@ void TIME_SENSITIVE(core_1_main)(void) {
+ // main loop
+ int main(void) {
+     board_init();
++    gblink_select_5v();
+     init_disable_handler();
+     init_time_request_handler();
+     bool is_same_core = true;

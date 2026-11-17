@@ -25,23 +25,33 @@ Every push to `main` builds both pieces and publishes them on the
 | `MobileTrainerLink.apk` | Android phone | Open it on the phone and install. The app updates itself from new releases. |
 | `MobileTrainerLink-Pico.uf2` | Raspberry Pi Pico (RP2040) | Hold **BOOTSEL**, plug the Pico into a computer, drag the file onto the `RPI-RP2` drive. |
 
-## Wiring (Pico ↔ Game Boy link port)
+## Hardware: GB-Link adapter or a DIY Pico board
 
-Same pin layout as stacksmashing's USB-to-GB-link board:
+The firmware uses the same pins as **GB-Link** adapters (and the agtbaskara / weimanc Pico
+link boards they're based on), so a GB-Link board works as-is:
 
 | Pico | Link signal | Direction |
 |---|---|---|
-| GP0 | Game Boy **SO** (serial out) | GB → Pico |
-| GP1 | SD (not used) | — |
-| GP2 | **SCK** (clock, driven by the Game Boy) | GB → Pico |
-| GP3 | Game Boy **SI** (serial in) | Pico → GB |
+| GP0 | **SCK** (clock, driven by the Game Boy) | GB → Pico |
+| GP1 | Game Boy **SO** (serial out) | GB → Pico |
+| GP2 | Game Boy **SI** (serial in) | Pico → GB |
+| GP11 / GP12 | GB-Link voltage switch (3.3 V / 5 V, active low) | set to **5 V** at power-on |
 | GND | GND | — |
 
-The Game Boy Color's link port runs at 5 V and the Pico's pins are 3.3 V only, so go through a
-level shifter (the stacksmashing board has one built in). Don't connect the link cable's VCC to
-the Pico. If you trace pins through a cable, remember SO and SI swap ends.
+The Game Boy Color's link port runs at 5 V and the Pico's pins are 3.3 V only, so a DIY build
+needs a level shifter. On GB-Link boards the firmware selects 5 V on its own, the same way
+GB-Link's Game Boy tools do (3.3 V is only for GBA). Don't connect the link cable's VCC to the
+Pico. The phone powers the Pico over USB: phone USB-C → OTG adapter or cable → Pico.
 
-The phone powers the Pico over USB: phone USB-C → OTG adapter or cable → Pico.
+### Coming from GB-Link firmware
+
+The Mobile Adapter needs its own firmware: the Game Boy expects the adapter's reply between one
+byte and the next, faster than a round trip over USB, so that logic has to run on the Pico. Flashing this UF2 replaces the GB-Link
+firmware, so the GB-Link web tools (multiboot, Pokémon trading, printer…) stop working until you
+switch back. To switch back, reflash GB-Link's firmware from
+[launcher.gblink.io](https://launcher.gblink.io), or drag `gblink.uf2` from
+[GBLink-Firmware releases](https://github.com/GB-Link/GBLink-Firmware/releases) onto the
+`RPI-RP2` drive. Nothing on the Pico is permanent.
 
 ## Using it
 
