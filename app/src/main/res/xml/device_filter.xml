@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- pico-gb-mobile-adapter firmware: VID 0xCAFE, PID 0x4011 -->
+    <usb-device vendor-id="51966" product-id="16401" />
+</resources>

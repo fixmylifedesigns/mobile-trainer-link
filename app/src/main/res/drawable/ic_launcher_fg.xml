@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original artwork: a little handheld with signal waves. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- body -->
+    <path
+        android:fillColor="#E8E4F5"
+        android:pathData="M38,30h26a4,4 0,0 1,4 4v38a8,8 0,0 1,-8 8h-22a4,4 0,0 1,-4 -4v-42a4,4 0,0 1,4 -4z" />
+    <!-- screen -->
+    <path
+        android:fillColor="#2C2350"
+        android:pathData="M41,35h20a2,2 0,0 1,2 2v16a2,2 0,0 1,-2 2h-20a2,2 0,0 1,-2 -2v-16a2,2 0,0 1,2 -2z" />
+    <path
+        android:fillColor="#8BE28B"
+        android:pathData="M44,39h14v10h-14z" />
+    <!-- d-pad -->
+    <path
+        android:fillColor="#2C2350"
+        android:pathData="M42,64h3v-3h3v3h3v3h-3v3h-3v-3h-3z" />
+    <!-- buttons -->
+    <path
+        android:fillColor="#E0457B"
+        android:pathData="M58,62m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0" />
+    <path
+        android:fillColor="#E0457B"
+        android:pathData="M62,67m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0" />
+    <!-- signal waves -->
+    <path
+        android:strokeColor="#FFD23F"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M72,30a8,8 0,0 1,8 8" />
+    <path
+        android:strokeColor="#FFD23F"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M72,22a16,16 0,0 1,16 16" />
+</vector>
