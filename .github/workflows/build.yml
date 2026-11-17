@@ -1,0 +1,111 @@
+name: Build APK + Pico firmware
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # Lorenzooone/pico-gb-mobile-adapter, the USB Mobile Adapter GB firmware the app talks to
+  FW_REPO: https://github.com/Lorenzooone/pico-gb-mobile-adapter.git
+  FW_COMMIT: 23dfb1b284d815e6de740af6480d8fa4aa816f9c
+  PICO_SDK_TAG: "1.5.1"
+
+jobs:
+  host-test:
+    name: Phone bridge vs. real firmware protocol code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Get firmware source
+        run: |
+          git clone "$FW_REPO" fw
+          git -C fw checkout "$FW_COMMIT"
+          git -C fw submodule update --init
+      - name: Build fake Pico (firmware gbridge.c + socket_impl.c, native)
+        run: |
+          gcc -O1 -w -Itools/host-test/stub -Ifw/include/generic -Ifw/libmobile \
+            -o fake_pico tools/host-test/fake_pico.c \
+            fw/src/generic/gbridge.c fw/src/generic/socket_impl.c fw/src/generic/io_buffer.c \
+            fw/src/generic/utils.c fw/src/generic/gbridge_timeout.c fw/src/generic/upkeep_callback.c
+      - name: Run end-to-end test
+        run: |
+          mkdir out
+          javac -d out app/src/main/java/com/fixmylife/mobiletrainerlink/bridge/*.java tools/host-test/TestHarness.java
+          timeout 120 java -cp out TestHarness ./fake_pico
+          CORRUPT=1 timeout 180 java -cp out TestHarness ./fake_pico
+
+  firmware:
+    name: Pico firmware (UF2)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib cmake
+      - name: Get Pico SDK
+        run: |
+          git clone --depth 1 --branch "$PICO_SDK_TAG" https://github.com/raspberrypi/pico-sdk.git "$HOME/pico-sdk"
+          git -C "$HOME/pico-sdk" submodule update --init --depth 1 lib/tinyusb
+      - name: Get firmware source
+        run: |
+          git clone "$FW_REPO" fw
+          git -C fw checkout "$FW_COMMIT"
+          git -C fw submodule update --init
+      - name: Build
+        run: |
+          export PICO_SDK_PATH="$HOME/pico-sdk"
+          cmake -S fw -B fw/build -DPICO_SDK_PATH="$PICO_SDK_PATH" -DPICO_BOARD=pico -DCMAKE_BUILD_TYPE=Release
+          cmake --build fw/build -j4
+          cp fw/build/pico_gb_mobile_adapter.uf2 MobileTrainerLink-Pico.uf2
+          ls -l MobileTrainerLink-Pico.uf2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: MobileTrainerLink-Pico.uf2
+
+  apk:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - name: Restore signing key
+        run: base64 -d ci/keystore.b64 > app/keystore.jks
+      - run: gradle testDebugUnitTest assembleDebug --no-daemon
+      - run: cp app/build/outputs/apk/debug/app-debug.apk MobileTrainerLink.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: MobileTrainerLink.apk
+
+  release:
+    name: Publish release
+    needs: [host-test, firmware, apk]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          body: |
+            **MobileTrainerLink.apk** — install on the phone.
+            **MobileTrainerLink-Pico.uf2** — hold BOOTSEL on the Pico, plug it into a computer, drag the file onto the RPI-RP2 drive.
+          files: |
+            MobileTrainerLink.apk
+            MobileTrainerLink-Pico.uf2
